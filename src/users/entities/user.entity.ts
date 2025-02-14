@@ -1,6 +1,11 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from 'typeorm';
 import { Auth } from '../../auth/entities/auth.entity';
 
+export enum UserRole {
+  USER = 0,
+  ADMIN = 1,
+}
+
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
@@ -14,4 +19,7 @@ export class User {
 
   @OneToOne(() => Auth, (auth) => auth.user)
   auth: Auth;
+
+  @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
+  role: UserRole;
 }
