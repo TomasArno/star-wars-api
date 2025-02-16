@@ -1,4 +1,4 @@
-import { UserPayload } from '../../auth/interfaces/user-payload.interface';
+import { UserPayload } from '../../auth/interfaces/user.interface';
 
 declare module 'express' {
   interface Request {
