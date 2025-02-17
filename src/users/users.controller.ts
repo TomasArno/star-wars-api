@@ -49,7 +49,7 @@ export class UsersController {
     },
   })
   async getProfile(@Req() req: Request) {
-    const userId = req.user.id;
+    const userId = req.user?.id;
 
     await this.usersService.findOneById(userId);
   }
