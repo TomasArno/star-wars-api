@@ -27,6 +27,9 @@ import { Movie } from './movies/entities/movie.entity';
       database: process.env.DB_NAME,
       entities: [User, Auth, Movie],
       synchronize: true,
+      ssl: {
+        rejectUnauthorized: false,
+      },
     }),
     AuthModule,
     UsersModule,
