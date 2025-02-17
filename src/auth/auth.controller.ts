@@ -4,6 +4,7 @@ import {
   ApiResponse,
   ApiBody,
   ApiBadRequestResponse,
+  ApiNotFoundResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
@@ -37,6 +38,13 @@ export class AuthController {
   })
   @ApiBadRequestResponse({
     description: 'Invalid input data',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: [],
+        timestamp: new Date().toISOString(),
+      },
+    },
   })
   @ApiBody({ type: RegisterDto })
   async register(@Body(ValidationPipe) registerDto: RegisterDto) {
@@ -51,15 +59,39 @@ export class AuthController {
     schema: {
       type: 'object',
       properties: {
-        accessToken: { type: 'string', example: 'jwt.token.here' },
+        accessToken: { type: 'string', example: 'jwtToken' },
+      },
+    },
+  })
+  @ApiNotFoundResponse({
+    description: 'Email not found',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Email not found',
+        timestamp: new Date().toISOString(),
       },
     },
   })
   @ApiUnauthorizedResponse({
     description: 'Invalid credentials',
+    schema: {
+      example: {
+        statusCode: 401,
+        message: 'Invalid credentials',
+        timestamp: new Date().toISOString(),
+      },
+    },
   })
   @ApiBadRequestResponse({
     description: 'Invalid input data',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: [],
+        timestamp: new Date().toISOString(),
+      },
+    },
   })
   @ApiBody({ type: LoginDto })
   async login(@Body(ValidationPipe) loginDto: LoginDto) {

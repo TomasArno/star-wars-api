@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -41,16 +45,14 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     const user = await this.usersService.findOneByEmail(loginDto.email);
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+    if (!user) throw new NotFoundException('Email not found');
 
     const auth = await this.authRepository.findOne({
       where: { user: { id: user.id } },
     });
-    if (!auth || !(await bcrypt.compare(loginDto.password, auth.password))) {
+
+    if (!auth || !(await bcrypt.compare(loginDto.password, auth.password)))
       throw new UnauthorizedException('Invalid credentials');
-    }
 
     const payload: UserPayload = {
       email: user.email,
