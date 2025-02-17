@@ -4,12 +4,16 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { Movie } from './entities/movie.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+
+import { IFindMovie } from './interfaces/find-movie.interface';
 import { CreateMovieDto } from './dto/create-movie.dto';
 import { SearchMovieDto } from './dto/search-movie.dto';
+import { Movie } from './entities/movie.entity';
+
 import axios from 'axios';
+import { addFilters } from './utils/add-filters.util';
 
 @Injectable()
 export class MoviesService {
@@ -37,43 +41,7 @@ export class MoviesService {
 
   async findAll(filters: SearchMovieDto, page: number = 1, limit: number = 20) {
     try {
-      const queryBuilder = this.movieRepository.createQueryBuilder('movie');
-
-      if (filters.title) {
-        queryBuilder.andWhere('movie.title ILIKE :title', {
-          title: `%${filters.title}%`,
-        });
-      }
-
-      if (filters.description) {
-        queryBuilder.andWhere('movie.description ILIKE :description', {
-          description: `%${filters.description}%`,
-        });
-      }
-
-      if (filters.director) {
-        queryBuilder.andWhere('movie.director ILIKE :director', {
-          director: `%${filters.director}%`,
-        });
-      }
-
-      if (filters.rating !== undefined) {
-        queryBuilder.andWhere('movie.rating = :rating', {
-          rating: filters.rating,
-        });
-      }
-
-      if (filters.genre) {
-        queryBuilder.andWhere('movie.genre ILIKE :genre', {
-          genre: `%${filters.genre}%`,
-        });
-      }
-
-      if (filters.episodeId !== undefined) {
-        queryBuilder.andWhere('movie.episodeId = :episodeId', {
-          episodeId: filters.episodeId,
-        });
-      }
+      const queryBuilder = addFilters(this.movieRepository, filters);
 
       queryBuilder.skip((page - 1) * limit).take(limit);
 
@@ -100,7 +68,20 @@ export class MoviesService {
     return movie;
   }
 
-  async update(id: string, movie: Omit<Movie, 'id'>): Promise<Movie | null> {
+  private async findOneBy(filters: IFindMovie): Promise<Movie | null> {
+    const queryBuilder = addFilters(this.movieRepository, filters);
+
+    const movie = await queryBuilder.getOne();
+
+    if (!movie) throw new NotFoundException(`Movie not found`);
+
+    return movie;
+  }
+
+  async update(
+    id: string,
+    movie: Partial<Omit<Movie, 'id'>>,
+  ): Promise<Movie | null> {
     if (isNaN(Number(id))) throw new BadRequestException('Invalid ID');
     const parsedId = parseInt(id);
 
@@ -130,24 +111,34 @@ export class MoviesService {
       const films = response.data.results;
 
       for (const film of films) {
-        const movie = new Movie();
+        try {
+          await this.findOneBy({
+            tag: 'Star-Wars',
+            episodeId: film.episode_id,
+          });
+        } catch {
+          const movie: CreateMovieDto = {
+            title: film.title,
+            description: film.opening_crawl,
+            episodeId: film.episode_id,
+            director: film.director,
+            releaseDate: film.release_date,
+            isSeries: true,
+            genre: 'Action',
+            tags: ['Star-Wars', 'Space'],
+          };
 
-        movie.title = film.title;
-        movie.description = film.opening_crawl;
-        movie.episodeId = film.episode_id;
-        movie.director = film.director;
-        movie.releaseDate = film.release_date;
-        movie.isSeries = true;
-        movie.genre = 'Action';
-        movie.tags = ['Star Wars', 'Space'];
+          const syncMovie = await this.create(movie);
 
-        await this.movieRepository.save(movie);
+          this.logger.log(`Synchronized movie with ID: ${syncMovie.id}`);
+        }
       }
     } catch (error) {
       this.logger.error(
         `Error syncing with Star Wars API: ${error.message}`,
         error.stack,
       );
+
       throw new BadRequestException('Failed to sync with Star Wars API');
     }
   }

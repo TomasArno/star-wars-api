@@ -16,37 +16,37 @@ export class UpdateMovieDto {
   @IsString()
   @IsOptional()
   @Length(1, 255)
-  title: string;
+  title?: string;
 
   @IsString()
   @IsOptional()
   @Length(1, 1000)
-  description: string;
+  description?: string;
 
   @IsString()
   @IsOptional()
   @Length(1, 100)
-  director: string;
+  director?: string;
 
   @IsDateString()
   @IsOptional()
-  releaseDate: string;
+  releaseDate?: string;
 
   @IsInt()
   @Min(0)
   @Max(10)
   @IsOptional()
-  rating: number;
+  rating?: number;
 
   @IsInt()
   @Min(0)
   @IsOptional()
-  episodeId: number;
+  episodeId?: number;
 
   @IsString()
   @IsOptional()
   @Length(2, 50)
-  genre: string;
+  genre?: string;
 
   @IsArray()
   @IsOptional()
@@ -54,9 +54,9 @@ export class UpdateMovieDto {
   @ArrayMaxSize(3)
   @IsString({ each: true })
   @Length(1, 20, { each: true })
-  tags: string[];
+  tags?: string[];
 
   @IsBoolean()
   @IsOptional()
-  isSeries: boolean;
+  isSeries?: boolean;
 }
