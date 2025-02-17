@@ -30,4 +30,9 @@ export class SearchMovieDto {
   @IsOptional()
   @Length(2, 50)
   genre?: string;
+
+  @IsString()
+  @IsOptional()
+  @Length(2, 20)
+  tag?: string;
 }
