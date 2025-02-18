@@ -8,6 +8,7 @@ import {
   UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
+import { Request } from 'express';
 
 const mockRegisterDto: RegisterDto = {
   fullName: 'Test user',
@@ -27,6 +28,11 @@ const mockUser = {
   role: 0,
 };
 
+const mockUpdatePasswordDto = {
+  oldPassword: 'oldPassword',
+  newPassword: 'newPassword',
+};
+
 const mockAccessToken = 'mockAccessToken';
 
 describe('AuthController', () => {
@@ -42,6 +48,7 @@ describe('AuthController', () => {
           useValue: {
             register: jest.fn(),
             login: jest.fn(),
+            changePassword: jest.fn(), // Aquí es donde agregamos el mock para changePassword
           },
         },
       ],
@@ -120,6 +127,64 @@ describe('AuthController', () => {
       await expect(controller.login(mockLoginDto)).rejects.toThrow(
         BadRequestException,
       );
+    });
+  });
+
+  describe('updatePassword', () => {
+    it('should successfully update user password', async () => {
+      const expectedResult = undefined;
+
+      (authService.changePassword as jest.Mock).mockResolvedValue(
+        expectedResult,
+      );
+
+      const req = { user: { id: mockUser.id } } as Request;
+      const result = await controller.updatePassword(
+        req,
+        mockUpdatePasswordDto,
+      );
+
+      expect(authService.changePassword).toHaveBeenCalledWith(
+        mockUser.id,
+        mockUpdatePasswordDto,
+      );
+      expect(result).toEqual(expectedResult);
+    });
+
+    it('should handle NotFoundException if user not found', async () => {
+      (authService.changePassword as jest.Mock).mockRejectedValue(
+        new NotFoundException('User with ID 1 not found'),
+      );
+
+      const req = { user: { id: mockUser.id } } as Request;
+
+      await expect(
+        controller.updatePassword(req, mockUpdatePasswordDto),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should handle UnauthorizedException if invalid old password', async () => {
+      (authService.changePassword as jest.Mock).mockRejectedValue(
+        new UnauthorizedException('Invalid credentials'),
+      );
+
+      const req = { user: { id: mockUser.id } } as Request;
+
+      await expect(
+        controller.updatePassword(req, mockUpdatePasswordDto),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should handle BadRequestException for invalid data', async () => {
+      (authService.changePassword as jest.Mock).mockRejectedValue(
+        new BadRequestException(),
+      );
+
+      const req = { user: { id: mockUser.id } } as Request;
+
+      await expect(
+        controller.updatePassword(req, mockUpdatePasswordDto),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

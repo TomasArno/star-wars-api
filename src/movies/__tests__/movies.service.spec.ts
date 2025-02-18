@@ -127,8 +127,14 @@ describe('MoviesService', () => {
     it('should throw NotFoundException if movie is not found', async () => {
       mockMovieRepository.update.mockResolvedValue({ affected: 0 });
 
+      await expect(
+        service.update('1', { title: 'test' } as any),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException if body is empty', async () => {
       await expect(service.update('1', {} as any)).rejects.toThrow(
-        NotFoundException,
+        BadRequestException,
       );
     });
   });
