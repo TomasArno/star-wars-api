@@ -90,11 +90,7 @@ export class MoviesController {
   })
   @ApiBody({ type: CreateMovieDto })
   async createMovie(
-    @Body(
-      new ValidationPipe({
-        whitelist: true,
-      }),
-    )
+    @Body()
     movieDto: CreateMovieDto,
   ) {
     return await this.moviesService.create(movieDto);
@@ -200,12 +196,6 @@ export class MoviesController {
       },
     },
   })
-  @ApiParam({
-    name: 'id',
-    type: String,
-    description: 'Movie ID',
-    example: '1',
-  })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized, token is required',
     schema: {
@@ -225,6 +215,12 @@ export class MoviesController {
         timestamp: new Date().toISOString(),
       },
     },
+  })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    description: 'Movie ID',
+    example: '1',
   })
   async getMovie(@Param('id') id: string) {
     if (!id) throw new BadRequestException('ID is required');
@@ -276,13 +272,13 @@ export class MoviesController {
       },
     },
   })
+  @ApiBody({ type: UpdateMovieDto })
   @ApiParam({
     name: 'id',
     type: String,
     description: 'Movie ID',
     example: '1',
   })
-  @ApiBody({ type: UpdateMovieDto })
   @ApiUnauthorizedResponse({
     description: 'Unauthorized, token is required',
     schema: {
@@ -303,17 +299,9 @@ export class MoviesController {
       },
     },
   })
-  async updateMovie(
-    @Param('id') id: string,
-    @Body(
-      new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-      }),
-    )
-    movie: UpdateMovieDto,
-  ) {
+  async updateMovie(@Param('id') id: string, @Body() movie: UpdateMovieDto) {
     if (!id) throw new BadRequestException('ID is required');
+
     return await this.moviesService.update(id, movie);
   }
 

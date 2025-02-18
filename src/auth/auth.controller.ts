@@ -1,4 +1,12 @@
-import { Controller, Post, Body, ValidationPipe } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  ValidationPipe,
+  Patch,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import {
   ApiOperation,
   ApiResponse,
@@ -7,9 +15,13 @@ import {
   ApiNotFoundResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { Request } from 'express';
+
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { UpdatePasswordDto } from './dto/update-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -96,5 +108,53 @@ export class AuthController {
   @ApiBody({ type: LoginDto })
   async login(@Body(ValidationPipe) loginDto: LoginDto) {
     return this.authService.login(loginDto);
+  }
+
+  @ApiOperation({ summary: 'Update user password' })
+  @ApiResponse({
+    status: 200,
+    description: 'Password successfully updated',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Invalid credentials',
+    schema: {
+      example: {
+        statusCode: 401,
+        message: 'Invalid credentials',
+        timestamp: new Date().toISOString(),
+      },
+    },
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'User with ID x not found',
+        timestamp: new Date().toISOString(),
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid data',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: [],
+        timestamp: new Date().toISOString(),
+      },
+    },
+  })
+  @ApiBody({ type: UpdatePasswordDto })
+  @Patch('password')
+  @UseGuards(JwtAuthGuard)
+  async updatePassword(
+    @Req() req: Request,
+    @Body()
+    userRoleDto: UpdatePasswordDto,
+  ) {
+    const userId = req.user?.id;
+
+    return await this.authService.changePassword(userId, userRoleDto);
   }
 }

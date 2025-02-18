@@ -14,6 +14,8 @@ import { Movie } from './entities/movie.entity';
 
 import axios from 'axios';
 import { addFilters } from './utils/add-filters.util';
+import { parseId } from '../common/utils/parse-id.util';
+import { checkEmptyObject } from '../common/utils/check-empty.util';
 
 @Injectable()
 export class MoviesService {
@@ -26,8 +28,9 @@ export class MoviesService {
 
   async create(movieDto: CreateMovieDto): Promise<Movie> {
     try {
-      const movie = this.movieRepository.create(movieDto);
+      checkEmptyObject(movieDto);
 
+      const movie = this.movieRepository.create(movieDto);
       const newMovie = await this.movieRepository.save(movie);
 
       this.logger.log(`Movie has been created: ${JSON.stringify(movieDto)}`);
@@ -57,8 +60,7 @@ export class MoviesService {
   }
 
   async findOneById(id: string): Promise<Movie | null> {
-    if (isNaN(Number(id))) throw new BadRequestException('Invalid ID');
-    const parsedId = parseInt(id);
+    const parsedId = parseId(id);
 
     const movie = await this.movieRepository.findOneBy({ id: parsedId });
 
@@ -82,8 +84,9 @@ export class MoviesService {
     id: string,
     movie: Partial<Omit<Movie, 'id'>>,
   ): Promise<Movie | null> {
-    if (isNaN(Number(id))) throw new BadRequestException('Invalid ID');
-    const parsedId = parseInt(id);
+    checkEmptyObject(movie);
+
+    const parsedId = parseId(id);
 
     const updatedMovie = await this.movieRepository.update(parsedId, movie);
 
@@ -96,8 +99,7 @@ export class MoviesService {
   }
 
   async delete(id: string): Promise<void> {
-    if (isNaN(Number(id))) throw new BadRequestException('Invalid ID');
-    const parsedId = parseInt(id);
+    const parsedId = parseId(id);
 
     const result = await this.movieRepository.delete(parsedId);
 

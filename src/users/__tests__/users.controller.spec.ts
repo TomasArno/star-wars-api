@@ -2,93 +2,157 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from '../users.controller';
 import { UsersService } from '../users.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { UpdateUserDto } from '../dto/update-user.dto';
+import { UpdateRoleDto } from '../dto/update-role.dto';
+import { UserRole } from '../entities/user.entity';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from '../entities/user.entity';
-import { NotFoundException } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
 
-const mockUser: Omit<User, 'auth'> = {
+const mockUser = {
   id: 1,
   fullName: 'Tomas',
   email: 'arnotomas1@gmail.com',
-  role: 0,
+  role: UserRole.USER,
+};
+
+const mockUpdatedUser = {
+  id: 1,
+  fullName: 'Updated Tomas',
+  email: 'updatedarnotomas1@gmail.com',
+  role: UserRole.ADMIN,
+};
+
+const mockUpdateUserDto: UpdateUserDto = {
+  fullName: 'Updated Tomas',
+  email: 'updatedarnotomas1@gmail.com',
+};
+
+const mockUpdateRoleDto: UpdateRoleDto = {
+  role: UserRole.ADMIN,
 };
 
 describe('UsersController', () => {
   let controller: UsersController;
-  let usersService: UsersService;
-  let reflector: Reflector;
+  let service: UsersService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UsersController],
       providers: [
-        {
-          provide: UsersService,
-          useValue: {
-            findOneById: jest.fn(),
-          },
-        },
+        UsersService,
         {
           provide: getRepositoryToken(User),
           useValue: {
             findOne: jest.fn(),
+            update: jest.fn(),
+          },
+        },
+        {
+          provide: JwtAuthGuard,
+          useValue: {
+            canActivate: (context) => {
+              const request = context.switchToHttp().getRequest();
+              request.user = mockUser;
+              return true;
+            },
           },
         },
         Reflector,
       ],
-    })
-      .overrideGuard(JwtAuthGuard)
-      .useValue({
-        canActivate: (context) => {
-          const request = context.switchToHttp().getRequest();
-
-          request.user = mockUser;
-
-          return true;
-        },
-      })
-      .compile();
+    }).compile();
 
     controller = module.get<UsersController>(UsersController);
-    usersService = module.get<UsersService>(UsersService);
-    reflector = module.get<Reflector>(Reflector);
-  });
-
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
+    service = module.get<UsersService>(UsersService);
   });
 
   describe('getProfile', () => {
-    it('should return the user profile', async () => {
-      (usersService.findOneById as jest.Mock).mockResolvedValue(mockUser);
-      const request = {
-        user: mockUser,
-      } as any;
+    it('should return user profile successfully', async () => {
+      jest.spyOn(service, 'findOneById').mockResolvedValue(mockUser as any);
 
-      await controller.getProfile(request);
+      const result = await controller.getProfile({ user: mockUser } as any);
 
-      expect(usersService.findOneById).toHaveBeenCalledWith(1);
+      expect(result).toEqual(mockUser);
+      expect(service.findOneById).toHaveBeenCalledWith(1);
     });
 
-    it('should handle NotFoundException', async () => {
-      (usersService.findOneById as jest.Mock).mockRejectedValue(
-        new NotFoundException('User not found'),
-      );
-      const request = {
-        user: { id: 999 },
-      } as any;
+    it('should throw NotFoundException if user not found', async () => {
+      jest
+        .spyOn(service, 'findOneById')
+        .mockRejectedValue(new NotFoundException('User not found'));
 
-      await expect(controller.getProfile(request)).rejects.toThrow(
-        NotFoundException,
+      await expect(
+        controller.getProfile({ user: { id: 999 } } as any),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('updateProfile', () => {
+    it('should update user profile successfully', async () => {
+      jest.spyOn(service, 'update').mockResolvedValue(mockUpdatedUser as any);
+
+      const result = await controller.updateProfile(
+        { user: mockUser } as any,
+        mockUpdateUserDto,
       );
+
+      expect(result).toEqual(mockUpdatedUser);
+      expect(service.update).toHaveBeenCalledWith(1, mockUpdateUserDto);
     });
 
-    it('should allow access if no roles are required', async () => {
-      jest.spyOn(reflector, 'get').mockReturnValue(undefined);
+    it('should throw NotFoundException if user not found', async () => {
+      jest
+        .spyOn(service['userRepository'], 'update')
+        .mockResolvedValue({ affected: 0 } as any);
 
-      const request = { user: mockUser } as any;
-      await expect(controller.getProfile(request)).resolves.not.toThrow();
+      await expect(
+        controller.updateProfile(
+          { user: { id: 999 } } as any,
+          mockUpdateUserDto,
+        ),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException if there is an issue with the update', async () => {
+      jest
+        .spyOn(service, 'update')
+        .mockRejectedValue(new BadRequestException('Failed to update user'));
+
+      await expect(
+        controller.updateProfile({ user: mockUser } as any, mockUpdateUserDto),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('updateRole', () => {
+    it('should update user role successfully for an admin', async () => {
+      jest.spyOn(service, 'update').mockResolvedValue(mockUpdatedUser as any);
+
+      const result = await controller.updateRole('1', mockUpdateRoleDto);
+
+      expect(result).toEqual(mockUpdatedUser);
+      expect(service.update).toHaveBeenCalledWith('1', mockUpdateRoleDto);
+    });
+
+    it('should throw NotFoundException if user not found', async () => {
+      jest
+        .spyOn(service['userRepository'], 'update')
+        .mockResolvedValue({ affected: 0 } as any);
+
+      await expect(
+        controller.updateRole('999', mockUpdateRoleDto),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException if invalid role data is provided', async () => {
+      jest
+        .spyOn(service, 'update')
+        .mockRejectedValue(new BadRequestException('Invalid role data'));
+
+      await expect(
+        controller.updateRole('1', mockUpdateRoleDto),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

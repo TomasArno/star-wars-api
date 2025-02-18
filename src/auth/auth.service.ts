@@ -15,14 +15,17 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
 import { UsersService } from '../users/users.service';
+import { IUpdatePassword } from './interfaces/update-password.interface';
+import { checkEmptyObject } from '../common/utils/check-empty.util';
+import { parseId } from '../common/utils/parse-id.util';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     @InjectRepository(Auth)
     private readonly authRepository: Repository<Auth>,
+    private readonly usersService: UsersService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -55,8 +58,8 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
 
     const payload: UserPayload = {
-      email: user.email,
       id: user.id,
+      email: user.email,
       role: user.role,
     };
 
@@ -65,5 +68,26 @@ export class AuthService {
         secret: process.env.JWT_SECRET,
       }),
     };
+  }
+
+  async changePassword(userId: string | number, data: IUpdatePassword) {
+    checkEmptyObject(data);
+    const parsedId = parseId(userId);
+
+    const auth = await this.authRepository
+      .createQueryBuilder('auth')
+      .innerJoinAndSelect('auth.user', 'user')
+      .where('auth.userId = :userId', { userId: parsedId })
+      .getOne();
+
+    if (!auth)
+      throw new NotFoundException(`User with ID ${parsedId} not found`);
+
+    if (!(await bcrypt.compare(data.oldPassword, auth.password)))
+      throw new UnauthorizedException('Invalid credentials');
+
+    const hashedPassword = await bcrypt.hash(data.newPassword, 10);
+
+    await this.authRepository.update(auth.id, { password: hashedPassword });
   }
 }
