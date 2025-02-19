@@ -11,6 +11,7 @@ import { Auth } from './auth/entities/auth.entity';
 import { Movie } from './movies/entities/movie.entity';
 
 import { WinstonLogger } from './config/logger.config';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   providers: [WinstonLogger],
@@ -34,6 +35,12 @@ import { WinstonLogger } from './config/logger.config';
         rejectUnauthorized: false,
       },
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 10,
+      },
+    ]),
     AuthModule,
     UsersModule,
     MoviesModule,
