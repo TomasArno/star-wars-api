@@ -12,6 +12,7 @@ import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
 import { User } from '../../users/entities/user.entity';
 import { IUpdatePassword } from '../interfaces/update-password.interface';
+import { WinstonLogger } from '../../config/logger.config';
 
 const mockUser: Omit<User, 'auth'> = {
   id: 1,
@@ -51,6 +52,7 @@ describe('AuthService', () => {
   let usersService: UsersService;
   let authRepository: Repository<Auth>;
   let jwtService: JwtService;
+  let logger: WinstonLogger;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -85,6 +87,16 @@ describe('AuthService', () => {
             getOne: jest.fn(),
           },
         },
+        {
+          provide: WinstonLogger,
+          useValue: {
+            log: jest.fn(),
+            error: jest.fn(),
+            warn: jest.fn(),
+            debug: jest.fn(),
+            verbose: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -92,6 +104,7 @@ describe('AuthService', () => {
     usersService = module.get<UsersService>(UsersService);
     authRepository = module.get<Repository<Auth>>(getRepositoryToken(Auth));
     jwtService = module.get<JwtService>(JwtService);
+    logger = module.get<WinstonLogger>(WinstonLogger);
   });
 
   it('should be defined', () => {

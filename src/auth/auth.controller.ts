@@ -22,10 +22,14 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { UpdatePasswordDto } from './dto/update-password.dto';
+import { WinstonLogger } from '../config/logger.config';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly logger: WinstonLogger,
+  ) {}
 
   @Post('signup')
   @ApiOperation({ summary: 'Register a new user' })

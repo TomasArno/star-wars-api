@@ -10,7 +10,10 @@ import { User } from './users/entities/user.entity';
 import { Auth } from './auth/entities/auth.entity';
 import { Movie } from './movies/entities/movie.entity';
 
+import { WinstonLogger } from './config/logger.config';
+
 @Module({
+  providers: [WinstonLogger],
   imports: [
     ConfigModule.forRoot({
       envFilePath:
@@ -35,5 +38,6 @@ import { Movie } from './movies/entities/movie.entity';
     UsersModule,
     MoviesModule,
   ],
+  exports: [WinstonLogger],
 })
 export class AppModule {}

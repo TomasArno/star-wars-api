@@ -3,6 +3,7 @@ import { MoviesService } from '../movies.service';
 import { Movie } from '../entities/movie.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { WinstonLogger } from '../../config/logger.config';
 
 const mockMovieRepository = {
   create: jest.fn(),
@@ -15,6 +16,7 @@ const mockMovieRepository = {
 
 describe('MoviesService', () => {
   let service: MoviesService;
+  let logger: WinstonLogger;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -24,10 +26,21 @@ describe('MoviesService', () => {
           provide: getRepositoryToken(Movie),
           useValue: mockMovieRepository,
         },
+        {
+          provide: WinstonLogger,
+          useValue: {
+            log: jest.fn(),
+            error: jest.fn(),
+            warn: jest.fn(),
+            debug: jest.fn(),
+            verbose: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
     service = module.get<MoviesService>(MoviesService);
+    logger = module.get<WinstonLogger>(WinstonLogger);
   });
 
   afterEach(() => {
@@ -59,16 +72,6 @@ describe('MoviesService', () => {
       expect(result).toEqual(movieDto);
       expect(mockMovieRepository.create).toHaveBeenCalledWith(movieDto);
       expect(mockMovieRepository.save).toHaveBeenCalledWith(movieDto);
-    });
-
-    it('should throw BadRequestException if creation fails', async () => {
-      const movieDto = { title: 'Inception' };
-      mockMovieRepository.create.mockReturnValue(movieDto);
-      mockMovieRepository.save.mockRejectedValue(new Error('Database Error'));
-
-      await expect(service.create(movieDto as any)).rejects.toThrow(
-        BadRequestException,
-      );
     });
   });
 

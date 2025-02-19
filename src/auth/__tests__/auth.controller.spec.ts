@@ -9,6 +9,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { WinstonLogger } from '../../config/logger.config';
 
 const mockRegisterDto: RegisterDto = {
   fullName: 'Test user',
@@ -38,6 +39,7 @@ const mockAccessToken = 'mockAccessToken';
 describe('AuthController', () => {
   let controller: AuthController;
   let authService: AuthService;
+  let logger: WinstonLogger;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -48,7 +50,17 @@ describe('AuthController', () => {
           useValue: {
             register: jest.fn(),
             login: jest.fn(),
-            changePassword: jest.fn(), // Aquí es donde agregamos el mock para changePassword
+            changePassword: jest.fn(),
+          },
+        },
+        {
+          provide: WinstonLogger,
+          useValue: {
+            log: jest.fn(),
+            error: jest.fn(),
+            warn: jest.fn(),
+            debug: jest.fn(),
+            verbose: jest.fn(),
           },
         },
       ],
@@ -56,6 +68,7 @@ describe('AuthController', () => {
 
     controller = module.get<AuthController>(AuthController);
     authService = module.get<AuthService>(AuthService);
+    logger = module.get<WinstonLogger>(WinstonLogger);
   });
 
   it('should be defined', () => {

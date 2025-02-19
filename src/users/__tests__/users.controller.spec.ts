@@ -9,6 +9,7 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from '../entities/user.entity';
+import { WinstonLogger } from '../../config/logger.config';
 
 const mockUser = {
   id: 1,
@@ -36,6 +37,7 @@ const mockUpdateRoleDto: UpdateRoleDto = {
 describe('UsersController', () => {
   let controller: UsersController;
   let service: UsersService;
+  let logger: WinstonLogger;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -60,11 +62,22 @@ describe('UsersController', () => {
           },
         },
         Reflector,
+        {
+          provide: WinstonLogger,
+          useValue: {
+            log: jest.fn(),
+            error: jest.fn(),
+            warn: jest.fn(),
+            debug: jest.fn(),
+            verbose: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
     controller = module.get<UsersController>(UsersController);
     service = module.get<UsersService>(UsersService);
+    logger = module.get<WinstonLogger>(WinstonLogger);
   });
 
   describe('getProfile', () => {

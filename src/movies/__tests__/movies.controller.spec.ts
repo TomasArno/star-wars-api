@@ -8,6 +8,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { Reflector } from '@nestjs/core';
 import { UserRole } from '../../users/entities/user.entity';
+import { WinstonLogger } from '../../config/logger.config';
 
 const mockMovie = {
   id: 1,
@@ -50,6 +51,7 @@ const mockSearchMovieDto: SearchMovieDto = {};
 describe('MoviesController', () => {
   let controller: MoviesController;
   let service: MoviesService;
+  let logger: WinstonLogger;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -67,13 +69,23 @@ describe('MoviesController', () => {
           },
         },
         Reflector,
+        {
+          provide: WinstonLogger,
+          useValue: {
+            log: jest.fn(),
+            error: jest.fn(),
+            warn: jest.fn(),
+            debug: jest.fn(),
+            verbose: jest.fn(),
+          },
+        },
       ],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({
         canActivate: (context) => {
           const request = context.switchToHttp().getRequest();
-          request.user = { role: UserRole.ADMIN }; // Mock user with admin role by default
+          request.user = { role: UserRole.ADMIN };
           return true;
         },
       })
@@ -81,6 +93,7 @@ describe('MoviesController', () => {
 
     controller = module.get<MoviesController>(MoviesController);
     service = module.get<MoviesService>(MoviesService);
+    logger = module.get<WinstonLogger>(WinstonLogger);
   });
 
   it('should be defined', () => {

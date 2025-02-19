@@ -5,11 +5,12 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { Auth } from './entities/auth.entity';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { UsersModule } from 'src/users/users.module';
+import { UsersModule } from '../users/users.module';
+import { WinstonLogger } from '../config/logger.config';
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, WinstonLogger],
   imports: [
     TypeOrmModule.forFeature([Auth]),
     JwtModule.register({

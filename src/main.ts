@@ -4,6 +4,8 @@ import { AppModule } from './app.module';
 
 import { GlobalExceptionFilter } from './common/filters/global-exceptions.filter';
 import { ValidationPipe } from '@nestjs/common';
+import { LoggingInterceptor } from './interceptors/logging.interceptor';
+import { WinstonLogger } from './config/logger.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -18,6 +20,8 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
+  const logger = app.get(WinstonLogger);
+  app.useGlobalInterceptors(new LoggingInterceptor(logger));
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   app.useGlobalFilters(new GlobalExceptionFilter());
 
