@@ -1,5 +1,9 @@
 # Star Wars API
 
+# LINK DEPLOY: https://star-wars-api-pvun.onrender.com/ (EL servicio se duerme por inactividad. La primera request tendrá un tiempo de espera de 1min aproximadamente hasta que se levante nuevamente)
+
+## Credenciales usuario ADMIN en la base de producción: { "password": "tomas123","email": "admin@gmail.com" }
+
 ## 1. **Instalar Dependencias**
 
 Instala todas las dependencias del proyecto ejecutando el siguiente comando:
