@@ -1,9 +1,11 @@
 import { NestFactory } from '@nestjs/core';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { AppModule } from './app.module';
-
-import { GlobalExceptionFilter } from './common/filters/global-exceptions.filter';
 import { ValidationPipe } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import * as path from 'path';
+import * as fs from 'fs';
+
+import { AppModule } from './app.module';
+import { GlobalExceptionFilter } from './common/filters/global-exceptions.filter';
 import { LoggingInterceptor } from './interceptors/logging.interceptor';
 import { WinstonLogger } from './config/logger.config';
 
@@ -20,6 +22,11 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
+  const logDir = path.join(__dirname, '../logs');
+  if (!fs.existsSync(logDir)) {
+    const res = fs.mkdirSync(logDir, { recursive: true });
+    console.log('res', res);
+  }
   const logger = app.get(WinstonLogger);
   app.useGlobalInterceptors(new LoggingInterceptor(logger));
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));

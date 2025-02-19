@@ -7,6 +7,10 @@ export class WinstonLogger implements LoggerService {
   private readonly logger: Logger;
 
   constructor() {
+    const projectRoot = path.join(__dirname, '../../');
+    const errorLogPath = path.join(projectRoot, 'logs', 'error.log');
+    const combinedLogPath = path.join(projectRoot, 'logs', 'combined.log');
+
     this.logger = createLogger({
       level: 'info',
       format: format.combine(
@@ -24,13 +28,8 @@ export class WinstonLogger implements LoggerService {
             }),
           ),
         }),
-        new transports.File({
-          filename: path.join(__dirname, '../logs/error.log'),
-          level: 'error',
-        }),
-        new transports.File({
-          filename: path.join(__dirname, '../logs/combined.log'),
-        }),
+        new transports.File({ filename: errorLogPath, level: 'error' }),
+        new transports.File({ filename: combinedLogPath }),
       ],
     });
   }
